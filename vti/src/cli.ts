@@ -73,10 +73,10 @@ async function prepareClientConnection(workspaceUri: Uri) {
   return clientConnection;
 }
 
-async function getDiagnostics(workspaceUri: Uri) {
+async function getDiagnostics(workspaceUri: Uri, _path: string = '**/*.vue') {
   const clientConnection = await prepareClientConnection(workspaceUri);
 
-  const files = glob.sync('**/*.vue', { cwd: workspaceUri.fsPath, ignore: ['node_modules/**'] });
+  const files = glob.sync(_path, { cwd: workspaceUri.fsPath, ignore: ['node_modules/**'] });
   const absFilePaths = files.map(f => path.resolve(workspaceUri.fsPath, f));
 
   console.log('');
@@ -138,18 +138,28 @@ async function getDiagnostics(workspaceUri: Uri) {
   else if (myArgs[0] === 'diagnostics') {
     console.log('Getting Vetur diagnostics');
     let workspaceUri;
+    let paths: Array<string> = [];
 
     if (myArgs[1]) {
-      console.log(`Loading Vetur in workspace path: ${myArgs[1]}`);
-      workspaceUri = Uri.file(myArgs[1]);
+      const pathResolved = path.resolve(myArgs[1]);
+      console.log(`Loading Vetur in workspace path: ${pathResolved}`);
+      workspaceUri = Uri.file(pathResolved);
+      paths = myArgs.slice(2);
     } else {
       console.log(`Loading Vetur in current directory: ${process.cwd()}`);
       workspaceUri = Uri.file(process.cwd());
+      paths = [];
+    }
+    if (!paths.length) {
+      paths.push('**/*.vue')
     }
 
     console.log('');
     console.log('====================================');
-    const errCount = await getDiagnostics(workspaceUri);
+    let errCount = 0;
+    for (let i = 0; i < paths.length; i++) {
+      errCount += await getDiagnostics(workspaceUri, paths[i])
+    }
     console.log('====================================');
 
     if (errCount === 0) {

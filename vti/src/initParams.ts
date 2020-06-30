@@ -6,7 +6,7 @@ export const params = {
         validation: {
           template: true,
           style: false,
-          script: false
+          script: true,
         },
         experimental: {
           templateInterpolationService: true
